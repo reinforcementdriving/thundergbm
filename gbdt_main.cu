@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 	int maxNumofNodePerTree = pow(2, nMaxDepth + 1) - 1;
 	int maxNumofSplittableNode = pow(2, nMaxDepth - 1);
 	int numInternalNode = pow(2, nMaxDepth) - 1;
-	int maxNumofUsedFeature = numInternalNode * 20;
+	int maxNumofUsedFeature = 80 * 10;//numInternalNode * 40;
 
 	DevicePredictor pred;
 
