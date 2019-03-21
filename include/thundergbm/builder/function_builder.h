@@ -13,11 +13,17 @@ class FunctionBuilder {
 public:
     virtual vector<Tree> build_approximate(const MSyncArray<GHPair> &gradients) = 0;
 
-    virtual void init(const DataSet &dataset, const GBMParam &param) {};
+    virtual void init(const DataSet &dataset, const GBMParam &param) {
+        this->param = param;
+    };
 
-    virtual const MSyncArray<float_type> &get_y_predict() = 0;
+    virtual const MSyncArray<float_type> &get_y_predict(){ return y_predict; };
 
     static FunctionBuilder *create(std::string name);
+
+protected:
+    MSyncArray<float_type> y_predict;
+    GBMParam param;
 };
 
 #endif //THUNDERGBM_FUNCTION_BUILDER_H

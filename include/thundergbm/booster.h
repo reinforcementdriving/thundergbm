@@ -7,12 +7,12 @@
 
 #include <thundergbm/objective/objective_function.h>
 #include <thundergbm/metric/metric.h>
-#include <thundergbm/updater/function_builder.h>
-#include <thundergbm/updater/hist_tree_builder.h>
-#include <thundergbm/updater/exact_tree_builder.h>
+#include <thundergbm/builder/function_builder.h>
+#include <thundergbm/util/multi_device.h>
 #include "thundergbm/common.h"
 #include "syncarray.h"
 #include "tree.h"
+#include "row_sampler.h"
 
 class Booster {
 public:
@@ -26,6 +26,7 @@ private:
     std::unique_ptr<Metric> metric;
     MSyncArray<float_type> y;
     std::unique_ptr<FunctionBuilder> fbuilder;
+    RowSampler rowSampler;
     GBMParam param;
     int n_devices;
 };
@@ -50,14 +51,17 @@ void Booster::init(const DataSet &dataSet, const GBMParam &param) {
 }
 
 void Booster::boost(vector<vector<Tree>> &boosted_model) {
+    TIMED_FUNC(timerObj);
     //update gradients
     DO_ON_MULTI_DEVICES(n_devices, [&](int device_id) {
         obj->get_gradient(y[device_id], fbuilder->get_y_predict()[device_id], gradients[device_id]);
     });
-
+    if (param.bagging) rowSampler.do_bagging(gradients);
+    PERFORMANCE_CHECKPOINT(timerObj);
     //build new model/approximate function
     boosted_model.push_back(fbuilder->build_approximate(gradients));
 
+    PERFORMANCE_CHECKPOINT(timerObj);
     //show metric on training set
     LOG(INFO) << metric->get_name() << " = " << metric->get_score(fbuilder->get_y_predict().front());
 }

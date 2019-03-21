@@ -2,9 +2,9 @@
 // Created by ss on 19-1-19.
 //
 
-#include <thundergbm/updater/function_builder.h>
-#include "thundergbm/updater/exact_tree_builder.h"
-#include "thundergbm/updater/hist_tree_builder.h"
+#include <thundergbm/builder/function_builder.h>
+#include "thundergbm/builder/exact_tree_builder.h"
+#include "thundergbm/builder/hist_tree_builder.h"
 
 FunctionBuilder *FunctionBuilder::create(std::string name) {
     if (name == "exact") return new ExactTreeBuilder;

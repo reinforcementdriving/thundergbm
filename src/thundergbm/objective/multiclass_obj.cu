@@ -36,27 +36,33 @@ Softmax::get_gradient(const SyncArray<float_type> &y, const SyncArray<float_type
 
 void Softmax::configure(GBMParam param, const DataSet &dataset) {
     num_class = param.num_class;
-    CHECK_EQ(dataset.label.size(), num_class);
+    CHECK_EQ(dataset.label.size(), num_class)<<dataset.label.size() << "!=" << num_class;
     label.resize(num_class);
     label.copy_from(dataset.label.data(), num_class);
 }
 
 void Softmax::predict_transform(SyncArray<float_type> &y) {
+    //this method transform y(#class * #instances) into y(#instances)
     auto yp_data = y.device_data();
     auto label_data = label.device_data();
     int num_class = this->num_class;
     int n_instances = y.size() / num_class;
     device_loop(n_instances, [=]__device__(int i) {
-        float_type max = yp_data[i];
         int max_k = 0;
+        float_type max_p = yp_data[i];
         for (int k = 1; k < num_class; ++k) {
-            if (max > yp_data[k * n_instances + i]) {
-                max = yp_data[k * n_instances + i];
+            if (max_p < yp_data[k * n_instances + i]) {
+                max_p = yp_data[k * n_instances + i];
                 max_k = k;
             }
         }
         yp_data[i] = label_data[max_k];
     });
+    //TODO not to make a temp_y?
+    SyncArray<float_type> temp_y(n_instances);
+    temp_y.copy_from(y.device_data(), n_instances);
+    y.resize(n_instances);
+    y.copy_from(temp_y);
 }
 
 

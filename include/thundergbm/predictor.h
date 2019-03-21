@@ -10,9 +10,9 @@
 
 class Predictor{
 public:
-    void predict(vector<Tree> &trees, DataSet &dataSet);
-private:
-    int get_next_child(const Tree::TreeNode &node, float_type feaValue);
+    vector<float_type> predict(const GBMParam &model_param, const vector<vector<Tree>> &boosted_model, const DataSet &dataSet);
+    void predict_raw(const GBMParam &model_param, const vector<vector<Tree>> &boosted_model,
+            const DataSet &dataSet, SyncArray<float_type> &y_predict);
 };
 
 #endif //THUNDERGBM_PREDICTOR_H

@@ -168,12 +168,13 @@ private:
     size_t size_;
 };
 
+//SyncArray for multiple devices
 template<typename T>
 class MSyncArray : public vector<SyncArray<T>> {
 public:
     explicit MSyncArray(size_t n_device) : base_class(n_device) {};
 
-    explicit MSyncArray(size_t n_device, size_t size) : base_class(size) {
+    explicit MSyncArray(size_t n_device, size_t size) : base_class(n_device) {
         for (int i = 0; i < n_device; ++i) {
             this->at(i) = SyncArray<T>(size);
         }

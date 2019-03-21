@@ -1,14 +1,25 @@
-cmake_minimum_required(VERSION 3.1)
+if(MSVC)
+    cmake_minimum_required(VERSION 3.4)
+else()
+    cmake_minimum_required(VERSION 3.1)
+endif()
 project(thundergbm)
+if(MSVC)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
+endif()
 
 find_package(CUDA REQUIRED QUIET)
 find_package(OpenMP REQUIRED QUIET)
+find_package(Boost COMPONENTS serialization REQUIRED)
+
+link_directories(${Boost_LIBRARY_DIRS})
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif ()
 
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11 -lineinfo -gencode arch=compute_60,code=sm_60 --expt-extended-lambda --default-stream per-thread")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11 -lineinfo --expt-extended-lambda --default-stream per-thread")
 
 if (CMAKE_VERSION VERSION_LESS "3.1")
     add_compile_options("-std=c++11")
@@ -27,13 +38,17 @@ add_definitions("-DELPP_THREAD_SAFE")
 add_definitions("-DELPP_STL_LOGGING")
 
 # includes
-set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/cub)
+set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/cub ${Boost_INCLUDE_DIR})
 include_directories(${COMMON_INCLUDES})
 
 add_subdirectory(src/thundergbm)
-add_subdirectory(src/test)
+
+set(BUILD_TESTS OFF CACHE BOOL "Build Tests")
+if (BUILD_TESTS)
+    add_subdirectory(src/test)
+endif ()
 
 # configuration file
-set(DATASET_DIR ${PROJECT_SOURCE_DIR}/dataset/)
+set(DATASET_DIR ${PROJECT_SOURCE_DIR}/datasets/)
 configure_file(include/thundergbm/config.h.in config.h)
 

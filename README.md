@@ -1,8 +1,6 @@
 [![Documentation Status](https://readthedocs.org/projects/thundergbm/badge/?version=latest)](https://thundergbm.readthedocs.org)
 [![GitHub license](http://dmlc.github.io/img/apache2.svg)](./LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/zeyiwen/thundergbm.svg)](https://github.com/zeyiwen/thundergbm/issues)
-
-We are upgrading this project. Some features are still under testing. You are more than welcome to open issues, or contribute to improving some features.
+[![GitHub issues](https://img.shields.io/github/issues/xtra-computing/thundergbm.svg)](https://github.com/xtra-computing/thundergbm/issues)
 
 <div align="center">
 <img src="https://github.com/zeyiwen/thundergbm/blob/master/docs/_static/tgbm-logo.png" width="240" height="200" align=left/>
@@ -10,13 +8,13 @@ We are upgrading this project. Some features are still under testing. You are mo
 <img src="https://github.com/zeyiwen/thundergbm/blob/master/docs/_static/overall.png" width="250" height="200" align=left/>
 </div>
 
-[Documentations](http://thundergbm.readthedocs.io) | [Parameters](https://thundergbm.readthedocs.io/en/latest/parameters.html) | [Python (scikit-learn) interface](https://github.com/zeyiwen/thundergbm/tree/master/python)
+[Documentations](http://thundergbm.readthedocs.io) | [Installation](https://thundergbm.readthedocs.io/en/latest/how-to.html#how-to-install-thundergbm) | [Parameters](https://thundergbm.readthedocs.io/en/latest/parameters.html) | [Python (scikit-learn) interface](https://github.com/zeyiwen/thundergbm/tree/master/python)
 
 ## Overview
 The mission of ThunderGBM is to help users easily and efficiently apply GBDTs and Random Forests to solve problems. ThunderGBM exploits GPUs to achieve high efficiency. Key features of ThunderGBM are as follows.
 * Often by 10x times over other libraries.
 * Support Python (scikit-learn) interfaces.
-* Supported Operating System(s): Linux.
+* Supported Operating System(s): Linux and Windows.
 * Support classification, regression and ranking.
 
 **Why accelerate GBDT and Random Forests**: A [survey](https://www.kaggle.com/amberthomas/kaggle-2017-survey-results) conducted by Kaggle in 2017 shows that 50%, 46% and 24% of the data mining and machine learning practitioners are users of Decision Trees, Random Forests and GBMs, respectively. 
@@ -31,22 +29,21 @@ GBDTs and Random Forests are often used for creating state-of-the-art data scien
 ## Getting Started
 
 ### Prerequisites
-* cmake 2.8 or above | gcc 4.8 or above for Linux | [CUDA](https://developer.nvidia.com/cuda-downloads) 8 or above
+* cmake 2.8 or above | [C++ boost](https://www.boost.org/) 
+    * gcc 4.8 or above for Linux | [CUDA](https://developer.nvidia.com/cuda-downloads) 8 or above
+    * Visual C++ for Windows | CUDA 10
 
 ### Download
 ```bash
 git clone https://github.com/zeyiwen/thundergbm.git
+cd thundergbm
+#under the directory of thundergbm
 git submodule init cub && git submodule update
 ```
-### Build on Linux 
+### Build on Linux (build instructions for [Windows](https://thundergbm.readthedocs.io/en/latest/how-to.html#build-on-windows))
 ```bash
-cd thundergbm
+#under the directory of thundergbm
 mkdir build && cd build && cmake .. && make -j
-```
-
-Build the test cases
-```bash
-git submodule update --init src/test/googletest
 ```
 
 ### Quick Start
@@ -61,7 +58,7 @@ You will see `RMSE = 0.489562` after successful running.
 If you use ThunderGBM in your paper, please cite our work ([preprint](https://www.comp.nus.edu.sg/~wenzy/papers/thundergbm.pdf)).
 ```
 @article{wenthundergbm19,
- author = {Wen, Zeyi and Shi, Jiashuai and He, Bingsheng and Chen, Jian and Li, Qinbin},
+ author = {Wen, Zeyi and Shi, Jiashuai and He, Bingsheng and Li, Qinbin and Chen, Jian},
  title = {{ThunderGBM}: Fast {GBDTs} and Random Forests on {GPUs}},
  journal = {To appear in arXiv},
  year = {2019}

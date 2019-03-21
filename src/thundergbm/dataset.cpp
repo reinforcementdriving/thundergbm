@@ -4,10 +4,10 @@
 #include <omp.h>
 #include <thundergbm/dataset.h>
 #include <thundergbm/objective/objective_function.h>
-
+//#include <array>
 #include "thundergbm/dataset.h"
 
-void DataSet::load_from_file(string file_name, GBMParam param) {
+void DataSet::load_from_file(string file_name, GBMParam &param) {
     LOG(INFO) << "loading LIBSVM dataset from file \"" << file_name << "\"";
     y.clear();
     csr_row_ptr.resize(1, 0);
@@ -18,7 +18,10 @@ void DataSet::load_from_file(string file_name, GBMParam param) {
     std::ifstream ifs(file_name, std::ifstream::binary);
     CHECK(ifs.is_open()) << "file " << file_name << " not found";
 
-    std::array<char, 4 << 20> buffer{};
+	int buffer_size = 4 << 20;
+	char *buffer = (char *)malloc(buffer_size);
+    //array may cause stack overflow in windows
+	//std::array<char, 4> buffer{};
     const int nthread = omp_get_max_threads();
 
     auto find_last_line = [](char *ptr, const char *begin) {
@@ -27,8 +30,10 @@ void DataSet::load_from_file(string file_name, GBMParam param) {
     };
 
     while (ifs) {
-        ifs.read(buffer.data(), buffer.size());
-        char *head = buffer.data();
+		ifs.read(buffer, buffer_size);
+		char *head = buffer;
+		//ifs.read(buffer.data(), buffer.size());
+        //char *head = buffer.data();
         size_t size = ifs.gcount();
         vector<vector<float_type>> y_(nthread);
         vector<vector<int>> col_idx_(nthread);
@@ -42,8 +47,8 @@ void DataSet::load_from_file(string file_name, GBMParam param) {
             //get working area of this thread
             int tid = omp_get_thread_num();
             size_t nstep = (size + nthread - 1) / nthread;
-            size_t sbegin = std::min(tid * nstep, size - 1);
-            size_t send = std::min((tid + 1) * nstep, size - 1);
+            size_t sbegin = (std::min)(tid * nstep, size - 1);
+            size_t send = (std::min)((tid + 1) * nstep, size - 1);
             char *pbegin = find_last_line(head + sbegin, head);
             char *pend = find_last_line(head + send, head);
 
@@ -107,11 +112,17 @@ void DataSet::load_from_file(string file_name, GBMParam param) {
         }
         for (int i = 0; i < nthread; i++) {
             this->y.insert(y.end(), y_[i].begin(), y_[i].end());
+            this->label.insert(label.end(), y_[i].begin(), y_[i].end());
         }
     }
+    ifs.close();
+	free(buffer);
     LOG(INFO) << "#instances = " << this->n_instances() << ", #features = " << this->n_features();
     if (ObjectiveFunction::need_load_group_file(param.objective)) load_group_file(file_name + ".group");
-    if (ObjectiveFunction::need_group_label(param.objective)) group_label();
+    if (ObjectiveFunction::need_group_label(param.objective)) {
+        group_label();
+        param.num_class = label.size();
+    }
 }
 
 size_t DataSet::n_features() const {
@@ -122,30 +133,48 @@ size_t DataSet::n_instances() const {
     return this->y.size();
 }
 
-void DataSet::load_from_sparse(int row_size, float *val, int *row_ptr, int *col_ptr, float *label) {
+void DataSet::load_from_sparse(int n_instances, float *csr_val, int *csr_row_ptr, int *csr_col_idx, float *y, GBMParam &param) {
     n_features_ = 0;
-    int total_count = 0;
-    for (int i = 0; i < row_size; i++) {
-        int ind;
-        if (label != NULL)
-            y.push_back(label[i]);
-        csr_row_ptr.push_back(row_ptr[total_count]);
-        for (int i = row_ptr[total_count]; i < row_ptr[total_count + 1]; i++) {
-            ind = col_ptr[i];
+    this->y.clear();
+    this->label.clear();
+    this->csr_val.clear();
+    this->csr_row_ptr.clear();
+    this->csr_col_idx.clear();
+    int nnz = csr_row_ptr[n_instances];
+    this->y.resize(n_instances);
+    //this->label.resize(n_instances);
+    this->csr_val.resize(nnz);
+    this->csr_row_ptr.resize(n_instances + 1);
+    this->csr_col_idx.resize(nnz);
 
-            csr_val.push_back(val[i]);
-            csr_col_idx.push_back(ind);
-            //TODO: move to above if want one-based format
-            ind++;            //convert to one-based format
-
-            if (ind > n_features_) n_features_ = ind;
-        }
-        total_count++;
-
+    CHECK_EQ(sizeof(float_type), sizeof(float));
+//    if(sizeof(float_type) == float) {
+//        memcpy(this->y.data(), y, sizeof(float) * n_instances);
+//        memcpy(this->csr_val.data(), csr_val, sizeof(float) * nnz);
+//    }
+//    else{//move instead of copy for converting float to double
+//        for(int i = 0; i < n_instances; i++) {
+//            this->y.data()[i] = y[i];
+//            this->label.data()[i] = y[i];
+//        }
+//        for(int e = 0; e < nnz; e++)
+//            this->csr_val.data()[e] = csr_val[e];
+//    }
+    if(y != NULL)
+        memcpy(this->y.data(), y, sizeof(float) * n_instances);
+    memcpy(this->csr_val.data(), csr_val, sizeof(float) * nnz);
+    memcpy(this->csr_col_idx.data(), csr_col_idx, sizeof(int) * nnz);
+    memcpy(this->csr_row_ptr.data(), csr_row_ptr, sizeof(int) * (n_instances + 1));
+    for (int i = 0; i < nnz; ++i) {
+        if (csr_col_idx[i] > n_features_) n_features_ = csr_col_idx[i];
     }
-//    n_features_++;
+    n_features_++;//convert from zero-based
     LOG(INFO) << "#instances = " << this->n_instances() << ", #features = " << this->n_features();
 
+    if (y != NULL && ObjectiveFunction::need_group_label(param.objective)){
+        group_label();
+        param.num_class = label.size();
+    }
 }
 
 void DataSet::load_group_file(string file_name) {
@@ -156,6 +185,7 @@ void DataSet::load_group_file(string file_name) {
     int group_size;
     while (ifs >> group_size) group.push_back(group_size);
     LOG(INFO) << "#groups = " << group.size();
+    ifs.close();
 }
 
 void DataSet::group_label() {

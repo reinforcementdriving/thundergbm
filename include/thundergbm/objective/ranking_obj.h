@@ -6,7 +6,6 @@
 #define THUNDERGBM_RANKING_OBJ_H
 
 #include "objective_function.h"
-#include "thundergbm/util/device_lambda.cuh"
 
 /**
  *
@@ -24,7 +23,7 @@ public:
     ~LambdaRank() override = default;
 
 protected:
-    virtual float_type get_delta_z(float_type labelI, float_type labelJ, int rankI, int rankJ, int group_id);
+	virtual inline float_type get_delta_z(float_type labelI, float_type labelJ, int rankI, int rankJ, int group_id) { return 1; };
 
     vector<int> gptr;//group start position
     int n_group;
@@ -34,12 +33,12 @@ protected:
 
 class LambdaRankNDCG : public LambdaRank {
 public:
-    void configure(GBMParam param, const DataSet &dataset) override;
+	void configure(GBMParam param, const DataSet &dataset) override;
 
-    string default_metric_name() override;
+	string default_metric_name() override;
 
 protected:
-    float_type get_delta_z(float_type labelI, float_type labelJ, int rankI, int rankJ, int group_id) override;
+	float_type get_delta_z(float_type labelI, float_type labelJ, int rankI, int rankJ, int group_id) override;
 
 private:
     vector<float_type> idcg;

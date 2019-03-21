@@ -4,7 +4,9 @@
 
 #include <thundergbm/trainer.h>
 #include "thundergbm/parser.h"
-
+#ifdef _WIN32
+    INITIALIZE_EASYLOGGINGPP
+#endif
 int main(int argc, char **argv) {
     el::Loggers::reconfigureAllLoggers(el::ConfigurationType::Format, "%datetime %level %fbase:%line : %msg");
     el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
@@ -20,6 +22,9 @@ int main(int argc, char **argv) {
     if (!model_param.profiling) {
         el::Loggers::reconfigureAllLoggers(el::ConfigurationType::PerformanceTracking, "false");
     }
+
+    DataSet dataset;
+    dataset.load_from_file(model_param.path, model_param);
     TreeTrainer trainer;
-    trainer.train(model_param);
+    trainer.train(model_param, dataset);
 }
